@@ -1,0 +1,45 @@
+{
+  "name": "gbxnga/payaza-laravel-sdk",
+  "description": "Type-safe Laravel SDK for the Payaza API",
+  "type": "library",
+  "license": "MIT",
+  "require": {
+    "php": "^8.2",
+    "illuminate/support": "^10.0|^11.0",
+    "illuminate/http": "^10.0|^11.0",
+    "guzzlehttp/guzzle": "^7.8"
+  },
+  "require-dev": {
+    "orchestra/testbench": "^8.0|^9.0",
+    "phpunit/phpunit": "^10.5",
+    "pestphp/pest": "^2.0",
+    "nunomaduro/collision": "^7.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "PayazaSdk\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "PayazaSdk\\Tests\\": "tests/"
+    }
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "PayazaSdk\\PayazaServiceProvider"
+      ],
+      "aliases": {
+        "Payaza": "PayazaSdk\\Payaza"
+      }
+    }
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true,
+  "config": {
+    "allow-plugins": {
+      "pestphp/pest-plugin": true
+    }
+  }
+}
