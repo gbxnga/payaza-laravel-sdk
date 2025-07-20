@@ -22,7 +22,7 @@ return [
     | Default Account
     |--------------------------------------------------------------------------
     */
-    'default_account' => env('PAYAZA_DEFAULT_ACCOUNT', 'primary'),
+    'default_account' => env('PAYAZA_DEFAULT_ACCOUNT', 'primary'), 
     
     /*
     |--------------------------------------------------------------------------
