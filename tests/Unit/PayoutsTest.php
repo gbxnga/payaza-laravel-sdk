@@ -2,21 +2,16 @@
 
 declare(strict_types=1);
 
-use PayazaSdk\{PayazaServiceProvider, Payaza};
+use PayazaSdk\Payaza;
 use PayazaSdk\Data\{PayoutBeneficiary, TransactionStatus};
 use PayazaSdk\Enums\{Currency, TransactionState};
 use Illuminate\Support\Facades\Http;
 
-uses(\Orchestra\Testbench\TestCase::class);
-
-it('provides package providers', function () {
-    return [PayazaServiceProvider::class];
-})->provides('getPackageProviders');
 
 test('sends payout successfully', function () {
     // Mock account info first
     Http::fake([
-        'https://api.payaza.africa/live/payaza-account/api/v1/mainaccounts/merchant/enquiry/main' => Http::response([
+        'https://api.payaza.africa/test/payaza-account/api/v1/mainaccounts/merchant/enquiry/main' => Http::response([
             "message" => "Account enquiry response",
             "status" => true,
             "data" => [
@@ -30,11 +25,11 @@ test('sends payout successfully', function () {
                 ]
             ]
         ], 200),
-        'https://api.payaza.africa/live/payout-receptor/payout' => Http::response([
+        'https://api.payaza.africa/test/payout-receptor/payout' => Http::response([
             "response_code" => 200,
             "response_message" => "Request successfully submitted",
             "response_content" => [
-                "transaction_status" => "09",
+                "transaction_status" => "PROCESSING",
                 "narration" => "Test payout",
                 "transaction_time" => "2023-10-19T14:37:35.517809",
                 "amount" => 100.0,
@@ -66,7 +61,7 @@ test('fetches payout status', function () {
     $sessionId = 'ABC123DEF456789';
     
     Http::fake([
-        'https://api.payaza.africa/live/payaza-account/api/v1/mainaccounts/merchant/transaction/PAYOUT123' => Http::response([
+        'https://api.payaza.africa/test/payaza-account/api/v1/mainaccounts/merchant/transaction/PAYOUT123' => Http::response([
             "status" => true,
             "message" => "Transaction fetched",
             "data" => [
@@ -87,7 +82,7 @@ test('fetches payout status', function () {
 
 test('fetches banks list', function () {
     Http::fake([
-        '*' => Http::response([
+        'https://api.payaza.africa/payout/banks/NG' => Http::response([
             'data' => [
                 ['code' => '044', 'name' => 'Access Bank'],
                 ['code' => '011', 'name' => 'First Bank'],
@@ -106,7 +101,7 @@ test('fetches banks list', function () {
 test('sends GHS bank transfer successfully', function () {
     // Mock account info for GHS
     Http::fake([
-        'https://api.payaza.africa/live/payaza-account/api/v1/mainaccounts/merchant/enquiry/main' => Http::response([
+        'https://api.payaza.africa/test/payaza-account/api/v1/mainaccounts/merchant/enquiry/main' => Http::response([
             "message" => "Account enquiry response", 
             "status" => true,
             "data" => [
@@ -120,11 +115,11 @@ test('sends GHS bank transfer successfully', function () {
                 ]
             ]
         ], 200),
-        'https://api.payaza.africa/live/payout-receptor/payout' => Http::response([
+        'https://api.payaza.africa/test/payout-receptor/payout' => Http::response([
             "response_code" => 200,
             "response_message" => "Request successfully submitted",
             "response_content" => [
-                "transaction_status" => "09",
+                "transaction_status" => "PROCESSING",
                 "narration" => "GHS Bank Transfer",
                 "transaction_time" => "2023-10-19T14:37:35.517809",
                 "amount" => 50.0,
@@ -153,7 +148,7 @@ test('sends GHS bank transfer successfully', function () {
 test('sends KES mobile money successfully', function () {
     // Mock account info for KES
     Http::fake([
-        'https://api.payaza.africa/live/payaza-account/api/v1/mainaccounts/merchant/enquiry/main' => Http::response([
+        'https://api.payaza.africa/test/payaza-account/api/v1/mainaccounts/merchant/enquiry/main' => Http::response([
             "message" => "Account enquiry response", 
             "status" => true,
             "data" => [
@@ -167,11 +162,11 @@ test('sends KES mobile money successfully', function () {
                 ]
             ]
         ], 200),
-        'https://api.payaza.africa/live/payout-receptor/payout' => Http::response([
+        'https://api.payaza.africa/test/payout-receptor/payout' => Http::response([
             "response_code" => 200,
             "response_message" => "Request successfully submitted",
             "response_content" => [
-                "transaction_status" => "09",
+                "transaction_status" => "PROCESSING",
                 "narration" => "Mobile Money Payout",
                 "transaction_time" => "2023-10-19T14:37:35.517809",
                 "amount" => 1000.0,
@@ -200,7 +195,7 @@ test('sends KES mobile money successfully', function () {
 test('sends XOF mobile money with country successfully', function () {
     // Mock account info for XOF
     Http::fake([
-        'https://api.payaza.africa/live/payaza-account/api/v1/mainaccounts/merchant/enquiry/main' => Http::response([
+        'https://api.payaza.africa/test/payaza-account/api/v1/mainaccounts/merchant/enquiry/main' => Http::response([
             "message" => "Account enquiry response", 
             "status" => true,
             "data" => [
@@ -214,11 +209,11 @@ test('sends XOF mobile money with country successfully', function () {
                 ]
             ]
         ], 200),
-        'https://api.payaza.africa/live/payout-receptor/payout' => Http::response([
+        'https://api.payaza.africa/test/payout-receptor/payout' => Http::response([
             "response_code" => 200,
             "response_message" => "Request successfully submitted",
             "response_content" => [
-                "transaction_status" => "09",
+                "transaction_status" => "PROCESSING",
                 "narration" => "Mobile Money Payout",
                 "transaction_time" => "2023-10-19T14:37:35.517809",
                 "amount" => 10000.0,

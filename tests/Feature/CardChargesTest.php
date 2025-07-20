@@ -2,15 +2,10 @@
 
 declare(strict_types=1);
 
-use PayazaSdk\{PayazaServiceProvider, Payaza};
+use PayazaSdk\Payaza;
 use PayazaSdk\Data\{Card, PayoutBeneficiary};
 use PayazaSdk\Enums\Currency;
 
-uses(\Orchestra\Testbench\TestCase::class);
-
-it('provides package providers', function () {
-    return [PayazaServiceProvider::class];
-})->provides('getPackageProviders');
 
 beforeEach(function () {
     if (! getenv('PAYAZA_INTEGRATION')) {

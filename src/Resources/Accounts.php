@@ -41,7 +41,7 @@ final class Accounts implements AccountsContract
             }
             
             return [
-                'available_balance' => $account['balance'] ?? 0,
+                'available_balance' => $account['accountBalance'] ?? 0,
                 'currency' => $account['currency'],
                 'account_reference' => $account['payazaAccountReference'] ?? null,
                 'account_name' => $account['accountName'] ?? null,

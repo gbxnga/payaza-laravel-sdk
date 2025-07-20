@@ -2,25 +2,10 @@
 
 declare(strict_types=1);
 
-use PayazaSdk\{PayazaServiceProvider, Payaza, PayazaClient};
+use PayazaSdk\{Payaza, PayazaClient};
 use Illuminate\Support\Facades\Http;
 
-uses(\Orchestra\Testbench\TestCase::class);
 
-it('provides package providers', function () {
-    return [PayazaServiceProvider::class];
-})->provides('getPackageProviders');
-
-beforeEach(function () {
-    config([
-        'payaza.accounts' => [
-            'primary' => ['key' => 'primary-key-123'],
-            'premium' => ['key' => 'premium-key-456'],
-        ],
-        'payaza.default_account' => 'primary',
-        'payaza.environment' => 'test',
-    ]);
-});
 
 test('can switch between accounts', function () {
     $primaryClient = Payaza::account('primary');
@@ -44,7 +29,7 @@ test('throws exception for account with empty key', function () {
 
 test('can use different accounts for operations', function () {
     Http::fake([
-        'https://api.payaza.africa/live/payaza-account/api/v1/mainaccounts/merchant/enquiry/main' => Http::response([
+        'https://api.payaza.africa/test/payaza-account/api/v1/mainaccounts/merchant/enquiry/main' => Http::response([
             "message" => "Account enquiry response",
             "status" => true,
             "data" => [
@@ -70,7 +55,7 @@ test('can use different accounts for operations', function () {
 test('can perform different operations with different accounts', function () {
     Http::fake([
         // Mock account info
-        'https://api.payaza.africa/live/payaza-account/api/v1/mainaccounts/merchant/enquiry/main' => Http::response([
+        'https://api.payaza.africa/test/payaza-account/api/v1/mainaccounts/merchant/enquiry/main' => Http::response([
             "message" => "Account enquiry response",
             "status" => true,
             "data" => [
@@ -82,7 +67,7 @@ test('can perform different operations with different accounts', function () {
             ]
         ], 200),
         // Mock payout
-        'https://api.payaza.africa/live/payout-receptor/payout' => Http::response([
+        'https://api.payaza.africa/test/payout-receptor/payout' => Http::response([
             "response_code" => 200,
             "response_content" => [
                 "response_status" => "TRANSACTION_INITIATED"
@@ -121,7 +106,7 @@ test('can perform different operations with different accounts', function () {
 
 test('default facade uses configured default account', function () {
     Http::fake([
-        'https://api.payaza.africa/live/payaza-account/api/v1/mainaccounts/merchant/enquiry/main' => Http::response([
+        'https://api.payaza.africa/test/payaza-account/api/v1/mainaccounts/merchant/enquiry/main' => Http::response([
             "message" => "Account enquiry response",
             "status" => true,
             "data" => [
@@ -138,12 +123,12 @@ test('default facade uses configured default account', function () {
     $balance = Payaza::accounts()->balance();
 
     expect($balance)->toBeArray()->toHaveCount(1)
-        ->and($balance[0]['accountBalance'])->toBe(500.00);
+        ->and($balance[0]['accountBalance'])->toBe(500);
 });
 
 test('can chain operations with account switching', function () {
     Http::fake([
-        'https://api.payaza.africa/live/payaza-account/api/v1/mainaccounts/merchant/enquiry/main' => Http::response([
+        'https://api.payaza.africa/test/payaza-account/api/v1/mainaccounts/merchant/enquiry/main' => Http::response([
             "message" => "Account enquiry response",
             "status" => true,
             "data" => [
@@ -161,6 +146,6 @@ test('can chain operations with account switching', function () {
 
     expect($ngnBalance)
         ->toBeArray()
-        ->and($ngnBalance['available_balance'])->toBe(1500.00)
+        ->and($ngnBalance['available_balance'])->toBe(1500)
         ->and($ngnBalance['currency'])->toBe('NGN');
 });

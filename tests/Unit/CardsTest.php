@@ -2,16 +2,11 @@
 
 declare(strict_types=1);
 
-use PayazaSdk\{PayazaServiceProvider, Payaza};
+use PayazaSdk\Payaza;
 use PayazaSdk\Data\{Card, TransactionStatus};
 use PayazaSdk\Enums\{Currency, TransactionState};
 use Illuminate\Support\Facades\Http;
 
-uses(\Orchestra\Testbench\TestCase::class);
-
-it('provides package providers', function () {
-    return [PayazaServiceProvider::class];
-})->provides('getPackageProviders');
 
 test('charges a card successfully', function () {
     fakeSuccessfulChargeResponse();
@@ -31,7 +26,7 @@ test('charges a card successfully', function () {
 
 test('fetches transaction status', function () {
     Http::fake([
-        '*' => Http::response([
+        'https://api.payaza.africa/test/card/card_charge/transaction_status' => Http::response([
             'response_content' => ['transaction_status' => 'successful'],
         ], 200),
     ]);
@@ -45,7 +40,7 @@ test('fetches transaction status', function () {
 
 test('processes refunds', function () {
     Http::fake([
-        '*' => Http::response(['status' => 'success'], 200),
+        'https://cards-live.78financials.com/card_charge/refund' => Http::response(['status' => 'success'], 200),
     ]);
 
     $result = Payaza::cards()->refund('TEST123', 50.0);
@@ -56,7 +51,7 @@ test('processes refunds', function () {
 function fakeSuccessfulChargeResponse(): void
 {
     Http::fake([
-        '*' => Http::response([
+        'https://cards-live.78financials.com/card_charge/' => Http::response([
             'do3dsAuth'  => true,
             'transaction'=> ['transaction_status' => 'pending'],
         ], 200),

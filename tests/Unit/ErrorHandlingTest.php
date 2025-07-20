@@ -2,21 +2,16 @@
 
 declare(strict_types=1);
 
-use PayazaSdk\{PayazaServiceProvider, Payaza};
+use PayazaSdk\Payaza;
 use PayazaSdk\Data\{Card, PayoutBeneficiary};
 use PayazaSdk\Enums\Currency;
 use PayazaSdk\Exceptions\PayazaException;
 use Illuminate\Support\Facades\Http;
 
-uses(\Orchestra\Testbench\TestCase::class);
-
-it('provides package providers', function () {
-    return [PayazaServiceProvider::class];
-})->provides('getPackageProviders');
 
 test('handles payout transaction status failure', function () {
     Http::fake([
-        'https://api.payaza.africa/live/payaza-account/api/v1/mainaccounts/merchant/transaction/FAILED123' => Http::response([
+        'https://api.payaza.africa/test/payaza-account/api/v1/mainaccounts/merchant/transaction/FAILED123' => Http::response([
             "status" => false,
             "message" => "Transaction not found"
         ], 404)
@@ -29,12 +24,12 @@ test('handles payout transaction status failure', function () {
 test('handles payout send failure with detailed error message', function () {
     Http::fake([
         // Mock account info first
-        'https://api.payaza.africa/live/payaza-account/api/v1/mainaccounts/merchant/enquiry/main' => Http::response([
+        'https://api.payaza.africa/test/payaza-account/api/v1/mainaccounts/merchant/enquiry/main' => Http::response([
             "status" => true,
             "data" => [["payazaAccountReference" => "1010000000", "currency" => "NGN"]]
         ], 200),
         // Mock failed payout
-        'https://api.payaza.africa/live/payout-receptor/payout' => Http::response([
+        'https://api.payaza.africa/test/payout-receptor/payout' => Http::response([
             "response_code" => 400,
             "response_message" => "Insufficient balance",
             "response_content" => []
@@ -70,7 +65,7 @@ test('handles card charge connection timeout', function () {
 
 test('handles card status API error with message', function () {
     Http::fake([
-        'https://api.payaza.africa/live/card/card_charge/transaction_status' => Http::response([
+        'https://api.payaza.africa/test/card/card_charge/transaction_status' => Http::response([
             "message" => "Invalid transaction reference",
             "error_code" => "INVALID_REF"
         ], 400)
@@ -82,7 +77,7 @@ test('handles card status API error with message', function () {
 
 test('handles account enquiry service unavailable', function () {
     Http::fake([
-        'https://api.payaza.africa/live/payaza-account/api/v1/mainaccounts/merchant/provider/enquiry' => Http::response([
+        'https://api.payaza.africa/test/payaza-account/api/v1/mainaccounts/merchant/provider/enquiry' => Http::response([
             "message" => "Service temporarily unavailable"
         ], 503)
     ]);
@@ -93,7 +88,7 @@ test('handles account enquiry service unavailable', function () {
 
 test('handles missing account reference for currency', function () {
     Http::fake([
-        'https://api.payaza.africa/live/payaza-account/api/v1/mainaccounts/merchant/enquiry/main' => Http::response([
+        'https://api.payaza.africa/test/payaza-account/api/v1/mainaccounts/merchant/enquiry/main' => Http::response([
             "status" => true,
             "data" => [
                 [
@@ -160,7 +155,7 @@ test('handles network timeout gracefully', function () {
 
 test('handles invalid currency filter', function () {
     Http::fake([
-        'https://api.payaza.africa/live/payaza-account/api/v1/mainaccounts/merchant/enquiry/main' => Http::response([
+        'https://api.payaza.africa/test/payaza-account/api/v1/mainaccounts/merchant/enquiry/main' => Http::response([
             "status" => true,
             "data" => [
                 ["currency" => "NGN", "accountBalance" => 100.0]

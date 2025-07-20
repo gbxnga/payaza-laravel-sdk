@@ -2,19 +2,14 @@
 
 declare(strict_types=1);
 
-use PayazaSdk\{PayazaServiceProvider, Payaza};
+use PayazaSdk\Payaza;
 use Illuminate\Support\Facades\Http;
 use PayazaSdk\Enums\Currency;
 
-uses(\Orchestra\Testbench\TestCase::class);
-
-it('provides package providers', function () {
-    return [PayazaServiceProvider::class];
-})->provides('getPackageProviders');
 
 test('fetches account balance for all currencies', function () {
     Http::fake([
-        'https://api.payaza.africa/live/payaza-account/api/v1/mainaccounts/merchant/enquiry/main' => Http::response([
+        'https://api.payaza.africa/test/payaza-account/api/v1/mainaccounts/merchant/enquiry/main' => Http::response([
             "message" => "Account enquiry response",
             "status" => true,
             "data" => [
@@ -49,7 +44,7 @@ test('fetches account balance for all currencies', function () {
 
 test('fetches account balance for specific currency', function () {
     Http::fake([
-        'https://api.payaza.africa/live/payaza-account/api/v1/mainaccounts/merchant/enquiry/main' => Http::response([
+        'https://api.payaza.africa/test/payaza-account/api/v1/mainaccounts/merchant/enquiry/main' => Http::response([
             "message" => "Account enquiry response",
             "status" => true,
             "data" => [
@@ -77,7 +72,7 @@ test('fetches account balance for specific currency', function () {
 
 test('fetches transactions list', function () {
     Http::fake([
-        '*' => Http::response([
+        'https://api.payaza.africa/account/transactions*' => Http::response([
             'data' => [
                 'transactions' => [
                     ['id' => '1', 'amount' => 100.00],
@@ -97,7 +92,7 @@ test('fetches transactions list', function () {
 
 test('fetches single transaction', function () {
     Http::fake([
-        '*' => Http::response([
+        'https://api.payaza.africa/account/transaction/TXN123' => Http::response([
             'data' => [
                 'id' => 'TXN123',
                 'amount' => 500.00,
@@ -111,12 +106,12 @@ test('fetches single transaction', function () {
     expect($transaction)
         ->toBeArray()
         ->and($transaction['id'])->toBe('TXN123')
-        ->and($transaction['amount'])->toBe(500.00);
+        ->and($transaction['amount'])->toBe(500);
 });
 
 test('performs account name enquiry successfully', function () {
     Http::fake([
-        'https://api.payaza.africa/live/payaza-account/api/v1/mainaccounts/merchant/provider/enquiry' => Http::response([
+        'https://api.payaza.africa/test/payaza-account/api/v1/mainaccounts/merchant/provider/enquiry' => Http::response([
             "response_code" => 200,
             "response_message" => "Approved or completely successful",
             "response_content" => [
@@ -145,7 +140,7 @@ test('performs account name enquiry successfully', function () {
 
 test('handles account name enquiry failure', function () {
     Http::fake([
-        'https://api.payaza.africa/live/payaza-account/api/v1/mainaccounts/merchant/provider/enquiry' => Http::response([
+        'https://api.payaza.africa/test/payaza-account/api/v1/mainaccounts/merchant/provider/enquiry' => Http::response([
             "response_code" => 400,
             "response_message" => "Account not found"
         ], 400)
@@ -157,7 +152,7 @@ test('handles account name enquiry failure', function () {
 
 test('gets payaza account info successfully', function () {
     Http::fake([
-        'https://api.payaza.africa/live/payaza-account/api/v1/mainaccounts/merchant/enquiry/main' => Http::response([
+        'https://api.payaza.africa/test/payaza-account/api/v1/mainaccounts/merchant/enquiry/main' => Http::response([
             "message" => "Account enquiry response",
             "status" => true,
             "data" => [

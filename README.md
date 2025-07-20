@@ -538,7 +538,7 @@ If you discover any security-related issues, please email security@yourcompany.c
 
 ## Credits
 
-- [Your Name](https://github.com/your-username)
+- [Gbenga Oni](https://github.com/gbxnga)
 - [All Contributors](../../contributors)
 
 ## License

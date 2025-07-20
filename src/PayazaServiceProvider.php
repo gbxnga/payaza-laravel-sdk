@@ -13,12 +13,21 @@ final class PayazaServiceProvider extends ServiceProvider
     {
         $this->mergeConfigFrom(__DIR__.'/../config/payaza.php', 'payaza');
 
-        $this->app->singleton(PayazaClient::class, function () {
-            $defaultAccount = config('payaza.default_account', 'primary');
-            $accounts = config('payaza.accounts');
-            $key = $accounts[$defaultAccount]['key'];
+        $this->app->bind(PayazaClient::class, function ($app) {
             
-            $env = config('payaza.environment') === 'live'
+            $defaultAccount = $app['config']->get('payaza.default_account', 'primary');
+            $accounts = $app['config']->get('payaza.accounts', []);
+            
+            if (empty($accounts) || !isset($accounts[$defaultAccount])) {
+                throw new \InvalidArgumentException("No account configured for '{$defaultAccount}' - available: " . implode(',', array_keys($accounts)));
+            }
+            
+            $key = $accounts[$defaultAccount]['key'] ?? '';
+            if (empty($key)) {
+                throw new \InvalidArgumentException("API key for account '{$defaultAccount}' is not configured");
+            }
+            
+            $env = $app['config']->get('payaza.environment') === 'live'
                 ? Environment::LIVE : Environment::TEST;
 
             return new PayazaClient(base64_encode($key), $env);
