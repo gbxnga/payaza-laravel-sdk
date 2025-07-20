@@ -8,7 +8,6 @@ use Illuminate\Http\Client\Factory as HttpFactory;
 use PayazaSdk\Contracts\PayazaClientContract;
 use PayazaSdk\Contracts\Resources;
 use PayazaSdk\Resources as ResourceClasses;
-use PayazaSdk\Http\Middleware\InjectHeaders;
 
 final class PayazaClient implements PayazaClientContract
 {
@@ -22,13 +21,13 @@ final class PayazaClient implements PayazaClientContract
         $this->http = $http ?: app(HttpFactory::class);
 
         $this->http->globalOptions([
-            'timeout' => config('payaza.timeout', 24)
+            'timeout' => config('payaza.timeout', 24),
+            'headers' => [
+                'Authorization' => "Payaza {$this->token}",
+                'x-TenantID' => $this->env->value,
+                'User-Agent' => 'payaza-sdk/1.0'
+            ]
         ]);
-
-        $this->http->withMiddleware(new InjectHeaders(
-            token:   $this->token,
-            tenant:  $this->env->value
-        ));
     }
 
     public function cards(): Resources\CardsContract

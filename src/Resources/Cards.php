@@ -64,7 +64,7 @@ final class Cards implements CardsContract
             : $this->resolveUrl('card_charge_3ds');
 
         try {
-            $response = $this->http->timeout(24)->post($endpoint, $payload);
+            $response = $this->http->post($endpoint, $payload);
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
             throw new PayazaException('Connection timeout - card issuer not responding');
         }
@@ -100,9 +100,8 @@ final class Cards implements CardsContract
     {
         try {
             $response = $this->http->withHeaders([
-                'x-api-key' => 'P5ooumv6U29K55guZfGqB1fYw904ZUz8gAg0TI36',
-                'x-TenantID' => $this->getTenantId()
-            ])->timeout(24)->post(
+                'x-api-key' => 'P5ooumv6U29K55guZfGqB1fYw904ZUz8gAg0TI36'
+            ])->post(
                 $this->resolveUrl('card_status'),
                 ['service_payload' => ['transaction_reference' => $transactionRef]]
             );
@@ -128,7 +127,7 @@ final class Cards implements CardsContract
     public function refund(string $transactionRef, float $amount): bool
     {
         try {
-            $response = $this->http->timeout(24)->post(
+            $response = $this->http->post(
                 $this->resolveUrl('card_refund'),
                 [
                     'service_payload' => [
@@ -152,7 +151,7 @@ final class Cards implements CardsContract
     public function refundStatus(string $refundTransactionRef): TransactionStatus
     {
         try {
-            $response = $this->http->timeout(24)->post(
+            $response = $this->http->post(
                 $this->resolveUrl('card_refund_status'),
                 ['service_payload' => ['refund_transaction_reference' => $refundTransactionRef]]
             );
