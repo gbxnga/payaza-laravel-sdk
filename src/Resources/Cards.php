@@ -71,7 +71,7 @@ final class Cards implements CardsContract
 
         if (!$response->successful()) {
             $message = $response->json('message', $response->json('debugMessage', 'Charge failed'));
-            throw new PayazaException($message, $response->status());
+            throw new PayazaException($message, $response->status(), null, $response->json());
         }
 
         $responseData = $response->json();
@@ -111,7 +111,7 @@ final class Cards implements CardsContract
 
         if (!$response->successful() && !isset($response->json()['response_content']['transaction_status'])) {
             $message = $response->json('message', 'Failed to get transaction status');
-            throw new PayazaException($message, $response->status());
+            throw new PayazaException($message, $response->status(), null, $response->json());
         }
 
         $responseContent = $response->json('response_content', []);
@@ -142,7 +142,7 @@ final class Cards implements CardsContract
 
         if (!$response->successful()) {
             $message = $response->json('message', 'Refund failed');
-            throw new PayazaException($message, $response->status());
+            throw new PayazaException($message, $response->status(), null, $response->json());
         }
 
         return true; // Refund initiated successfully
@@ -161,7 +161,7 @@ final class Cards implements CardsContract
 
         if (!$response->successful()) {
             $message = $response->json('message', 'Failed to fetch refund status');
-            throw new PayazaException($message, $response->status());
+            throw new PayazaException($message, $response->status(), null, $response->json());
         }
 
         return new TransactionStatus(

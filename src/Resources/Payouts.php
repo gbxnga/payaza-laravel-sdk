@@ -59,7 +59,7 @@ final class Payouts implements PayoutsContract
 
         if (!$response->successful() || !isset($response->json()['response_code']) || $response->json()['response_code'] != 200) {
             $message = $response->json('response_message', $response->json('message', 'Payout failed'));
-            throw new PayazaException($message, $response->status());
+            throw new PayazaException($message, $response->status(), null, $response->json());
         }
 
         $responseContent = $response->json('response_content', []);
@@ -79,7 +79,7 @@ final class Payouts implements PayoutsContract
 
         if (!$response->successful() || !isset($response->json()['status']) || !$response->json()['status']) {
             $message = $response->json('message', 'Failed to get transaction status');
-            throw new PayazaException($message, $response->status());
+            throw new PayazaException($message, $response->status(), null, $response->json());
         }
 
         $transactionData = $response->json('data', []);
@@ -99,7 +99,7 @@ final class Payouts implements PayoutsContract
         );
 
         if (! $response->successful()) {
-            throw new PayazaException('Unable to fetch banks', $response->status());
+            throw new PayazaException('Unable to fetch banks', $response->status(), null, $response->json());
         }
 
         return $response->json('data', []);
@@ -148,7 +148,7 @@ final class Payouts implements PayoutsContract
             );
             
             if (!$response->successful()) {
-                throw new PayazaException('Failed to retrieve account reference');
+                throw new PayazaException('Failed to retrieve account reference', $response->status(), null, $response->json());
             }
             
             $accounts = $response->json('data', []);
@@ -214,7 +214,7 @@ final class Payouts implements PayoutsContract
 
         if (!$response->successful() || !isset($response->json()['response_code']) || $response->json()['response_code'] != 200) {
             $message = $response->json('response_message', $response->json('message', 'Mobile money payout failed'));
-            throw new PayazaException($message, $response->status());
+            throw new PayazaException($message, $response->status(), null, $response->json());
         }
 
         $responseContent = $response->json('response_content', []);
@@ -269,7 +269,7 @@ final class Payouts implements PayoutsContract
 
         if (!$response->successful() || !isset($response->json()['response_code']) || $response->json()['response_code'] != 200) {
             $message = $response->json('response_message', $response->json('message', 'GHS bank transfer failed'));
-            throw new PayazaException($message, $response->status());
+            throw new PayazaException($message, $response->status(), null, $response->json());
         }
 
         $responseContent = $response->json('response_content', []);

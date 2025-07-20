@@ -72,7 +72,7 @@ final class Accounts implements AccountsContract
 
         if (!$response->successful() || !isset($response->json()['response_code']) || $response->json()['response_code'] != 200) {
             $message = $response->json('response_message', $response->json('message', 'Failed to get account name'));
-            throw new PayazaException($message, $response->status());
+            throw new PayazaException($message, $response->status(), null, $response->json());
         }
 
         $responseContent = $response->json('response_content', []);
@@ -97,7 +97,7 @@ final class Accounts implements AccountsContract
         }
 
         if (!$response->successful()) {
-            throw new PayazaException('Failed to retrieve Payaza accounts info', $response->status());
+            throw new PayazaException('Failed to retrieve Payaza accounts info', $response->status(), null, $response->json());
         }
 
         return $response->json('data', []);
