@@ -1,9 +1,9 @@
 # Payaza PHP SDK
 
-[![Latest Version on Packagist](https://img.shields.io/packagist/v/your-vendor/payaza-sdk.svg?style=flat-square)](https://packagist.org/packages/your-vendor/payaza-sdk)
-[![GitHub Tests Action Status](https://img.shields.io/github/workflow/status/your-vendor/payaza-sdk/run-tests?label=tests)](https://github.com/your-vendor/payaza-sdk/actions?query=workflow%3Arun-tests+branch%3Amain)
-[![GitHub Code Style Action Status](https://img.shields.io/github/workflow/status/your-vendor/payaza-sdk/Check%20&%20fix%20styling?label=code%20style)](https://github.com/your-vendor/payaza-sdk/actions?query=workflow%3A"Check+%26+fix+styling"+branch%3Amain)
-[![Total Downloads](https://img.shields.io/packagist/dt/your-vendor/payaza-sdk.svg?style=flat-square)](https://packagist.org/packages/your-vendor/payaza-sdk)
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/gbxnga/payaza-laravel-sdk.svg?style=flat-square)](https://packagist.org/packages/gbxnga/payaza-laravel-sdk)
+[![GitHub Tests Action Status](https://img.shields.io/github/actions/workflow/status/gbxnga/payaza-laravel-sdk/ci-cd.yml?branch=main&label=tests&style=flat-square)](https://github.com/gbxnga/payaza-laravel-sdk/actions?query=workflow%3Aci-cd+branch%3Amain)
+[![Total Downloads](https://img.shields.io/packagist/dt/gbxnga/payaza-laravel-sdk.svg?style=flat-square)](https://packagist.org/packages/gbxnga/payaza-laravel-sdk)
+[![PHP Version Require](https://img.shields.io/packagist/dependency-v/gbxnga/payaza-laravel-sdk/php?style=flat-square)](https://packagist.org/packages/gbxnga/payaza-laravel-sdk)
 
 A production-ready Laravel PHP SDK that wraps the entire Payaza REST API behind an expressive, type-safe façade. Everything is namespaced, strictly typed (declare(strict_types=1)), PSR-12 compliant, and fully unit-tested with PHPUnit.
 
@@ -525,7 +525,7 @@ return [
 ## Requirements
 
 - PHP 8.2 or higher
-- Laravel 10.0 or 11.0
+- Laravel 10.0, 11.0, or 12.0
 - Guzzle HTTP 7.8+
 
 ## Contributing
