@@ -37,6 +37,10 @@
   },
   "minimum-stability": "stable",
   "prefer-stable": true,
+  "scripts": {
+    "test": "vendor/bin/pest",
+    "test-coverage": "vendor/bin/pest --coverage"
+  },
   "config": {
     "allow-plugins": {
       "pestphp/pest-plugin": true

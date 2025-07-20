@@ -33,15 +33,40 @@ php artisan vendor:publish --tag=payaza-config
 
 ## Configuration
 
+### Environment-Based URL Resolution
+
+The SDK automatically handles test/live environment switching with configurable URLs. URLs can contain a `{tenant}` placeholder that gets replaced with `test` or `live` based on your `PAYAZA_ENV` setting.
+
+### Setup
+
 Add your Payaza credentials to your `.env` file:
 
 ```env
 PAYAZA_PUBLIC_KEY=your_base64_encoded_public_key
 PAYAZA_PREMIUM_PUBLIC_KEY=your_premium_public_key
 PAYAZA_DEFAULT_ACCOUNT=primary # Default account to use
+PAYAZA_TRANSACTION_PIN=your_transaction_pin # Required for payouts
 PAYAZA_ENV=test # or 'live' for production
 PAYAZA_BASE_URL=https://api.payaza.africa
+
+# Optional: Override specific API URLs if Payaza changes them
+# Use {tenant} placeholder for automatic live/test path injection
+PAYAZA_CARD_STATUS_URL=https://api.payaza.africa/{tenant}/card/card_charge/transaction_status
+PAYAZA_PAYOUT_URL=https://api.payaza.africa/{tenant}/payout-receptor/payout
+PAYAZA_ACCOUNT_ENQUIRY_URL=https://api.payaza.africa/{tenant}/payaza-account/api/v1/mainaccounts/merchant/provider/enquiry
+# ... other URLs as needed
 ```
+
+### How Tenant Resolution Works
+
+When you set `PAYAZA_ENV=live`, URLs like:
+- `https://api.payaza.africa/{tenant}/payout-receptor/payout` 
+- Become: `https://api.payaza.africa/live/payout-receptor/payout`
+
+When you set `PAYAZA_ENV=test`, they become:
+- `https://api.payaza.africa/test/payout-receptor/payout`
+
+This ensures proper environment isolation while maintaining URL flexibility.
 
 ## Usage
 
@@ -67,14 +92,24 @@ use PayazaSdk\Payaza;
 use PayazaSdk\Data\Card;
 use PayazaSdk\Enums\Currency;
 
-// Charge a card
+// Charge a card with custom callback URL
 $status = Payaza::cards()->charge(
     amount: 150.00,
     card: new Card('4242424242424242', 7, 2026, '123'),
     transactionRef: 'ORDER-123',
     currency: Currency::USD,
     accountName: 'John Doe',
-    authType: '3DS' // or '2DS'
+    authType: '3DS', // or '2DS'
+    callbackUrl: 'https://yoursite.com/webhooks/payaza' // Custom callback
+);
+
+// Charge with default callback URL
+$status = Payaza::cards()->charge(
+    amount: 150.00,
+    card: new Card('4242424242424242', 7, 2026, '123'),
+    transactionRef: 'ORDER-123',
+    currency: Currency::USD,
+    accountName: 'John Doe'
 );
 
 // Check transaction status
@@ -93,6 +128,8 @@ $refundStatus = Payaza::cards()->refundStatus('REFUND-123');
 ```
 
 ### Payouts
+
+#### NGN Bank Transfer
 
 ```php
 use PayazaSdk\Payaza;
@@ -118,20 +155,119 @@ $payoutStatus = Payaza::payouts()->status('PAYOUT-456');
 $banks = Payaza::payouts()->getBanks('NG'); // Nigeria banks
 ```
 
+#### GHS Bank Transfer
+
+```php
+// GHS bank transfer
+$status = Payaza::payouts()->sendGHSBankTransfer(
+    amount: 100.00,
+    accountNumber: '1234567890',
+    accountName: 'John Doe',
+    bankCode: 'GCB',
+    transactionRef: 'GHS-PAYOUT-123',
+    narration: 'GHS Payment'
+);
+```
+
+#### Mobile Money Payouts
+
+Support for mobile money across African currencies:
+
+```php
+use PayazaSdk\Enums\Currency;
+
+// KES Mobile Money (Kenya)
+$status = Payaza::payouts()->sendMobileMoney(
+    currency: Currency::KES,
+    amount: 1000.00,
+    phoneNumber: '254700123456',
+    accountName: 'John Doe',
+    bankCode: 'MPESA',
+    transactionRef: 'KES-MOMO-123'
+);
+
+// GHS Mobile Money (Ghana)
+$status = Payaza::payouts()->sendMobileMoney(
+    currency: Currency::GHS,
+    amount: 50.00,
+    phoneNumber: '233241234567',
+    accountName: 'Jane Doe',
+    bankCode: 'MTN',
+    transactionRef: 'GHS-MOMO-123'
+);
+
+// UGX Mobile Money (Uganda)
+$status = Payaza::payouts()->sendMobileMoney(
+    currency: Currency::UGX,
+    amount: 50000.00,
+    phoneNumber: '256701234567',
+    accountName: 'Bob Smith',
+    bankCode: 'AIRTEL',
+    transactionRef: 'UGX-MOMO-123'
+);
+
+// TZS Mobile Money (Tanzania)
+$status = Payaza::payouts()->sendMobileMoney(
+    currency: Currency::TZS,
+    amount: 25000.00,
+    phoneNumber: '255621234567',
+    accountName: 'Alice Johnson',
+    bankCode: 'VODACOM',
+    transactionRef: 'TZS-MOMO-123'
+);
+
+// XOF Mobile Money (West Africa - requires country)
+$status = Payaza::payouts()->sendMobileMoney(
+    currency: Currency::XOF,
+    amount: 10000.00,
+    phoneNumber: '221701234567',
+    accountName: 'Marie Diallo',
+    bankCode: 'ORANGE',
+    transactionRef: 'XOF-MOMO-123',
+    country: 'SEN' // Senegal country code
+);
+```
+
 ### Account Information
 
 ```php
 use PayazaSdk\Payaza;
+use PayazaSdk\Enums\Currency;
 
-// Get account balance
-$balance = Payaza::accounts()->balance();
-echo "Available balance: {$balance['available_balance']} {$balance['currency']}";
+// Get balance for a specific currency (NEW!)
+$ngnBalance = Payaza::accounts()->currency(Currency::NGN)->balance();
+echo "NGN Balance: {$ngnBalance['available_balance']} {$ngnBalance['currency']}";
+
+$ghsBalance = Payaza::accounts()->currency(Currency::GHS)->balance();
+echo "GHS Balance: {$ghsBalance['available_balance']} {$ghsBalance['currency']}";
+
+// Get all account balances
+$allBalances = Payaza::accounts()->balance();
+foreach ($allBalances as $account) {
+    echo "Currency: {$account['currency']}, Balance: {$account['balance']}";
+}
 
 // Get transaction history
 $transactions = Payaza::accounts()->transactions(page: 1, limit: 20);
 
 // Get specific transaction
 $transaction = Payaza::accounts()->transaction('TXN-789');
+
+// Verify account name before payout (Account Name Enquiry)
+$accountInfo = Payaza::accounts()->getAccountNameEnquiry(
+    accountNumber: '0123456789',
+    bankCode: '044',
+    currency: Currency::NGN
+);
+
+echo "Account Name: {$accountInfo['account_name']}";
+echo "Account Status: {$accountInfo['account_status']}";
+
+// Get Payaza account information
+$payazaAccounts = Payaza::accounts()->getPayazaAccountsInfo();
+foreach ($payazaAccounts as $account) {
+    echo "Currency: {$account['currency']}, Balance: {$account['balance']}";
+}
 ```
 
 ## Data Objects
@@ -262,6 +398,54 @@ composer test
 
 ## Advanced Usage
 
+### Complete Payout Workflow with Account Verification
+
+```php
+use PayazaSdk\Payaza;
+use PayazaSdk\Data\PayoutBeneficiary;
+use PayazaSdk\Enums\Currency;
+use PayazaSdk\Exceptions\PayazaException;
+
+try {
+    // Step 1: Verify recipient account details
+    $accountInfo = Payaza::accounts()->getAccountNameEnquiry(
+        accountNumber: '0123456789',
+        bankCode: '044',
+        currency: Currency::NGN
+    );
+    
+    if ($accountInfo['account_status'] !== 'ACTIVE') {
+        throw new Exception('Recipient account is not active');
+    }
+    
+    // Step 2: Create and send payout
+    $beneficiary = new PayoutBeneficiary(
+        accountName: $accountInfo['account_name'], // Use verified name
+        accountNumber: $accountInfo['account_number'],
+        bankCode: '044',
+        amount: 1000.00,
+        currency: Currency::NGN,
+        narration: 'Salary payment'
+    );
+    
+    $status = Payaza::payouts()->send($beneficiary, 'PAYOUT-' . uniqid());
+    
+    // Step 3: Monitor payout status
+    do {
+        sleep(5);
+        $payoutStatus = Payaza::payouts()->status($status->transactionId);
+        echo "Status: {$payoutStatus->state->value}\n";
+    } while ($payoutStatus->state === TransactionState::PROCESSING);
+    
+    if ($payoutStatus->state === TransactionState::SUCCESSFUL) {
+        echo "Payout completed successfully!";
+    }
+    
+} catch (PayazaException $e) {
+    echo "Payout failed: {$e->getMessage()}";
+}
+```
+
 ### Custom HTTP Client
 
 ```php
@@ -314,6 +498,20 @@ return [
     
     // Default Account
     'default_account' => env('PAYAZA_DEFAULT_ACCOUNT', 'primary'),
+    
+    // Transaction PIN
+    'transaction_pin' => env('PAYAZA_TRANSACTION_PIN'),
+    
+    // Configurable API URLs with tenant support
+    // Use {tenant} placeholder for automatic live/test path injection
+    'urls' => [
+        'card_charge_3ds' => env('PAYAZA_CARD_3DS_URL', 'https://cards-live.78financials.com/card_charge/'),
+        'card_charge_2ds' => env('PAYAZA_CARD_2DS_URL', 'https://cards-live.78financials.com/cards/mpgs/v1/2ds/card_charge'),
+        'card_status' => env('PAYAZA_CARD_STATUS_URL', 'https://api.payaza.africa/{tenant}/card/card_charge/transaction_status'),
+        'payout_send' => env('PAYAZA_PAYOUT_URL', 'https://api.payaza.africa/{tenant}/payout-receptor/payout'),
+        'account_enquiry' => env('PAYAZA_ACCOUNT_ENQUIRY_URL', 'https://api.payaza.africa/{tenant}/payaza-account/api/v1/mainaccounts/merchant/provider/enquiry'),
+        // ... other endpoints
+    ],
 
     // Environment and URLs
     'environment' => env('PAYAZA_ENV', 'test'), // 'test' or 'live'
@@ -358,20 +556,36 @@ Please see [CHANGELOG](CHANGELOG.md) for more information on what has changed re
 This SDK provides complete coverage of the Payaza API:
 
 ### Cards
-- ✅ Card charging (3DS/2DS)
+- ✅ Card charging (3DS/2DS authentication)
 - ✅ Transaction status checking
-- ✅ Refunds
-- ✅ Refund status checking
+- ✅ Refunds processing
+- ✅ Refund status tracking
+- ✅ Multiple currency support (USD, NGN, GHS, KES, UGX, TZS, XOF)
 
 ### Payouts
-- ✅ Bank transfers
+- ✅ NGN bank transfers (NUBAN)
+- ✅ GHS bank transfers (GHIPPS)
+- ✅ Mobile money payouts (GHS, KES, UGX, TZS, XOF)
+- ✅ Multi-country support (XOF with country parameter)
 - ✅ Payout status checking
 - ✅ Bank list retrieval
+- ✅ Automatic account reference resolution
 
-### Account
-- ✅ Balance checking
-- ✅ Transaction history
-- ✅ Single transaction retrieval
+### Account Management
+- ✅ Account balance checking
+- ✅ Transaction history retrieval
+- ✅ Single transaction lookup
+- ✅ Account name enquiry/verification
+- ✅ Payaza account information
+- ✅ Multi-account support with easy switching
+
+### Additional Features
+- ✅ Multiple Payaza account management
+- ✅ Environment-based configuration (test/live)
+- ✅ Type-safe enums and data objects
+- ✅ Comprehensive error handling
+- ✅ Laravel service provider integration
+- ✅ Facade support with account switching
 
 ## Support
 

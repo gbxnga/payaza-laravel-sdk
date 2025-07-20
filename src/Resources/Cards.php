@@ -9,10 +9,13 @@ use PayazaSdk\Contracts\Resources\CardsContract;
 use PayazaSdk\Data\{Card, TransactionStatus};
 use PayazaSdk\Enums\{Currency, Environment, TransactionState};
 use PayazaSdk\Exceptions\PayazaException;
+use PayazaSdk\Traits\ResolvesUrls;
 use Illuminate\Support\Str;
 
 final class Cards implements CardsContract
 {
+    use ResolvesUrls;
+    
     public function __construct(
         private readonly Http      $http,
         private readonly Environment $env
@@ -24,110 +27,157 @@ final class Cards implements CardsContract
         string   $transactionRef,
         Currency $currency = Currency::USD,
         ?string  $accountName = null,
-        string   $authType = '3DS'
+        string   $authType = '3DS',
+        ?string  $callbackUrl = null
     ): TransactionStatus {
 
         $payload = [
+            'service_type' => 'Account',
             'service_payload' => [
-                'amount'               => $amount,
-                'currency'             => $currency->value,
-                'transaction_reference'=> $transactionRef,
+                'request_application' => 'Payaza',
+                'application_module' => 'USER_MODULE',
+                'application_version' => '1.0.0',
+                'request_class' => 'UsdCardChargeRequest',
+                'phone_number' => '08012345678',
+                'amount' => $amount,
+                'transaction_reference' => $transactionRef,
+                'currency' => $currency->value,
+                'description' => 'Payment via Payaza SDK',
                 'card' => [
-                    'expiryMonth'  => $card->expiryMonth,
-                    'expiryYear'   => $card->expiryYear,
+                    'expiryMonth' => $card->expiryMonth,
+                    'expiryYear' => $card->expiryYear,
                     'securityCode' => $card->cvc,
-                    'cardNumber'   => $card->number,
+                    'cardNumber' => $card->number,
                 ],
+                'callback_url' => $callbackUrl ?? (config('app.url') . "/api/transaction/{$transactionRef}/webhooks/payaza")
             ],
         ];
 
         if ($accountName) {
             [$first, $last] = array_pad(explode(' ', $accountName, 2), 2, '');
             $payload['service_payload']['first_name'] = $first;
-            $payload['service_payload']['last_name']  = $last;
+            $payload['service_payload']['last_name'] = $last;
         }
 
         $endpoint = $authType === '2DS'
-            ? '/cards/mpgs/v1/2ds/card_charge'
-            : '/card_charge/';
+            ? $this->resolveUrl('card_charge_2ds')
+            : $this->resolveUrl('card_charge_3ds');
 
-        $response = $this->http->post(
-            "{$this->baseUrl()}{$endpoint}",
-            $payload
-        );
+        try {
+            $response = $this->http->timeout(24)->post($endpoint, $payload);
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            throw new PayazaException('Connection timeout - card issuer not responding');
+        }
 
-        if (! $response->successful()) {
-            throw new PayazaException(
-                message: $response->json('message', 'Charge failed'),
-                code: $response->status()
-            );
+        if (!$response->successful()) {
+            $message = $response->json('message', $response->json('debugMessage', 'Charge failed'));
+            throw new PayazaException($message, $response->status());
+        }
+
+        $responseData = $response->json();
+        
+        // Handle 2DS vs 3DS response format
+        if ($authType === '2DS') {
+            $responseData = $responseData['response_content'] ?? $responseData;
+        }
+
+        $transactionStatus = 'PENDING';
+        if (!($responseData['do3dsAuth'] ?? true) && isset($responseData['transaction'])) {
+            $transactionStatus = $responseData['transaction']['transaction_status'] ?? 'PENDING';
+            if (!in_array($transactionStatus, ['SUCCESSFUL', 'FAILED'])) {
+                $transactionStatus = 'PENDING';
+            }
         }
 
         return new TransactionStatus(
             transactionId: $transactionRef,
-            state:         $this->mapStatus($response->json('transaction.transaction_status') ?? 'PENDING'),
-            raw:           $response->json()
+            state: $this->mapStatus($transactionStatus),
+            raw: $response->json()
         );
     }
 
     public function status(string $transactionRef): TransactionStatus
     {
-        $response = $this->http->post(
-            $this->baseUrl() . '/card/card_charge/transaction_status',
-            ['service_payload' => ['transaction_reference' => $transactionRef]]
-        );
-
-        if (! $response->successful()) {
-            throw new PayazaException('Unable to fetch transaction status', $response->status());
+        try {
+            $response = $this->http->withHeaders([
+                'x-api-key' => 'P5ooumv6U29K55guZfGqB1fYw904ZUz8gAg0TI36',
+                'x-TenantID' => $this->getTenantId()
+            ])->timeout(24)->post(
+                $this->resolveUrl('card_status'),
+                ['service_payload' => ['transaction_reference' => $transactionRef]]
+            );
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            throw new PayazaException('Connection timeout');
         }
 
+        if (!$response->successful() && !isset($response->json()['response_content']['transaction_status'])) {
+            $message = $response->json('message', 'Failed to get transaction status');
+            throw new PayazaException($message, $response->status());
+        }
+
+        $responseContent = $response->json('response_content', []);
+        $status = $responseContent['transaction_status'] ?? 'pending';
+        
         return new TransactionStatus(
             transactionId: $transactionRef,
-            state:         $this->mapStatus($response->json('response_content.transaction_status')),
-            raw:           $response->json()
+            state: $this->mapStatus($status),
+            raw: $response->json()
         );
     }
 
     public function refund(string $transactionRef, float $amount): bool
     {
-        $response = $this->http->post(
-            $this->baseUrl() . '/card/refund',
-            [
-                'service_payload' => [
-                    'transaction_reference' => $transactionRef,
-                    'amount' => $amount,
+        try {
+            $response = $this->http->timeout(24)->post(
+                $this->resolveUrl('card_refund'),
+                [
+                    'service_payload' => [
+                        'transaction_reference' => $transactionRef,
+                        'refund_amount' => $amount
+                    ]
                 ]
-            ]
-        );
-
-        if (! $response->successful()) {
-            throw new PayazaException('Refund failed', $response->status());
+            );
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            throw new PayazaException('Connection timeout - refund service not responding');
         }
 
-        return $response->json('status') === 'success';
+        if (!$response->successful()) {
+            $message = $response->json('message', 'Refund failed');
+            throw new PayazaException($message, $response->status());
+        }
+
+        return true; // Refund initiated successfully
     }
 
     public function refundStatus(string $refundTransactionRef): TransactionStatus
     {
-        $response = $this->http->post(
-            $this->baseUrl() . '/card/refund/status',
-            ['service_payload' => ['transaction_reference' => $refundTransactionRef]]
-        );
+        try {
+            $response = $this->http->timeout(24)->post(
+                $this->resolveUrl('card_refund_status'),
+                ['service_payload' => ['refund_transaction_reference' => $refundTransactionRef]]
+            );
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            throw new PayazaException('Connection timeout - refund status service not responding');
+        }
 
-        if (! $response->successful()) {
-            throw new PayazaException('Unable to fetch refund status', $response->status());
+        if (!$response->successful()) {
+            $message = $response->json('message', 'Failed to fetch refund status');
+            throw new PayazaException($message, $response->status());
         }
 
         return new TransactionStatus(
             transactionId: $refundTransactionRef,
-            state:         $this->mapStatus($response->json('response_content.transaction_status')),
-            raw:           $response->json()
+            state: $this->mapStatus($response->json('response_content.transaction_status', 'pending')),
+            raw: $response->json()
         );
     }
 
+    // Note: Card endpoints use different base URLs than other services
     private function baseUrl(): string
     {
-        return config('payaza.base_url') . ($this->env === Environment::LIVE ? '/live' : '');
+        return $this->env === Environment::LIVE 
+            ? 'https://cards-live.78financials.com'
+            : 'https://cards-live.78financials.com'; // Use live for both for now
     }
 
     private function mapStatus(string|null $status): TransactionState

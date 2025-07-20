@@ -16,7 +16,8 @@ interface CardsContract
         string      $transactionRef,
         Currency    $currency = Currency::USD,
         ?string     $accountName = null,
-        string      $authType = '3DS'
+        string      $authType = '3DS',
+        ?string     $callbackUrl = null
     ): TransactionStatus;
 
     public function status(string $transactionRef): TransactionStatus;
