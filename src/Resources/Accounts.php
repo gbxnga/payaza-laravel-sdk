@@ -52,42 +52,11 @@ final class Accounts implements AccountsContract
         return $accounts;
     }
 
-    public function transactions(int $page = 1, int $limit = 50): array
-    {
-        $response = $this->http->get(
-            $this->baseUrl() . '/account/transactions',
-            [
-                'page' => $page,
-                'limit' => $limit,
-            ]
-        );
-
-        if (! $response->successful()) {
-            throw new PayazaException('Unable to fetch transactions', $response->status());
-        }
-
-        return $response->json('data', []);
-    }
-
-    public function transaction(string $transactionId): array
-    {
-        $response = $this->http->get(
-            $this->baseUrl() . "/account/transaction/{$transactionId}"
-        );
-
-        if (! $response->successful()) {
-            throw new PayazaException('Unable to fetch transaction', $response->status());
-        }
-
-        return $response->json('data', []);
-    }
 
     public function getAccountNameEnquiry(string $accountNumber, string $bankCode, Currency $currency = Currency::NGN): array
     {
         try {
-            $response = $this->http->withHeaders([
-                'x-TenantID' => $this->getTenantId()
-            ])->timeout(110)->post(
+            $response = $this->http->post(
                 $this->resolveUrl('account_enquiry'),
                 [
                     'service_payload' => [
@@ -120,9 +89,7 @@ final class Accounts implements AccountsContract
     public function getPayazaAccountsInfo(): array
     {
         try {
-            $response = $this->http->withHeaders([
-                'x-TenantID' => $this->getTenantId()
-            ])->get(
+            $response = $this->http->get(
                 $this->resolveUrl('account_info')
             );
         } catch (\Illuminate\Http\Client\ConnectionException $e) {

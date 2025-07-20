@@ -70,44 +70,6 @@ test('fetches account balance for specific currency', function () {
         ->and($balance['account_reference'])->toBe('1010000000');
 });
 
-test('fetches transactions list', function () {
-    Http::fake([
-        'https://api.payaza.africa/account/transactions*' => Http::response([
-            'data' => [
-                'transactions' => [
-                    ['id' => '1', 'amount' => 100.00],
-                    ['id' => '2', 'amount' => 200.00],
-                ],
-            ],
-        ], 200),
-    ]);
-
-    $transactions = Payaza::accounts()->transactions(1, 10);
-
-    expect($transactions)
-        ->toBeArray()
-        ->toHaveKey('transactions')
-        ->and($transactions['transactions'])->toHaveCount(2);
-});
-
-test('fetches single transaction', function () {
-    Http::fake([
-        'https://api.payaza.africa/account/transaction/TXN123' => Http::response([
-            'data' => [
-                'id' => 'TXN123',
-                'amount' => 500.00,
-                'status' => 'successful',
-            ],
-        ], 200),
-    ]);
-
-    $transaction = Payaza::accounts()->transaction('TXN123');
-
-    expect($transaction)
-        ->toBeArray()
-        ->and($transaction['id'])->toBe('TXN123')
-        ->and($transaction['amount'])->toBe(500);
-});
 
 test('performs account name enquiry successfully', function () {
     Http::fake([

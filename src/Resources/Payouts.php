@@ -52,9 +52,7 @@ final class Payouts implements PayoutsContract
             ]
         ];
 
-        $response = $this->http->withHeaders([
-            'x-TenantID' => $this->getTenantId()
-        ])->timeout(120)->post(
+        $response = $this->http->post(
             $this->resolveUrl('payout_send'),
             $payload
         );
@@ -75,9 +73,7 @@ final class Payouts implements PayoutsContract
 
     public function status(string $transactionRef): TransactionStatus
     {
-        $response = $this->http->withHeaders([
-            'x-TenantID' => $this->getTenantId()
-        ])->timeout(24)->get(
+        $response = $this->http->get(
             $this->resolveUrl('payout_status') . "/{$transactionRef}"
         );
 
@@ -147,9 +143,7 @@ final class Payouts implements PayoutsContract
     private function getAccountReference(Currency $currency): ?string
     {
         try {
-            $response = $this->http->withHeaders([
-                'x-TenantID' => $this->getTenantId()
-            ])->get(
+            $response = $this->http->get(
                 $this->resolveUrl('account_info')
             );
             
@@ -213,9 +207,7 @@ final class Payouts implements PayoutsContract
             $payload['service_payload']['country'] = $country;
         }
 
-        $response = $this->http->withHeaders([
-            'x-TenantID' => $this->getTenantId()
-        ])->timeout(120)->post(
+        $response = $this->http->post(
             $this->resolveUrl('payout_send'),
             $payload
         );
@@ -270,9 +262,7 @@ final class Payouts implements PayoutsContract
             ]
         ];
 
-        $response = $this->http->withHeaders([
-            'x-TenantID' => $this->getTenantId()
-        ])->timeout(120)->post(
+        $response = $this->http->post(
             $this->resolveUrl('payout_send'),
             $payload
         );
