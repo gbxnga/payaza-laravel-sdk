@@ -38,14 +38,16 @@ jobs:
       uses: actions/cache@v4
       with:
         path: vendor
-        key: ${{ runner.os }}-php-${{ matrix.php-version }}-laravel-${{ matrix.laravel-version }}-${{ hashFiles('**/composer.lock') }}
+        key: ${{ runner.os }}-php-${{ matrix.php-version }}-laravel-${{ matrix.laravel-version }}-${{ hashFiles('**/composer.json') }}
         restore-keys: |
           ${{ runner.os }}-php-${{ matrix.php-version }}-laravel-${{ matrix.laravel-version }}-
 
     - name: Install dependencies
       run: |
+        composer config minimum-stability stable
+        composer config prefer-stable true
         composer require "laravel/framework:${{ matrix.laravel-version }}" --no-interaction --prefer-dist --no-update
-        composer install --prefer-dist --no-interaction --no-progress
+        composer update --prefer-dist --no-interaction --no-progress
 
     - name: Create directories
       run: mkdir -p build/logs
