@@ -150,9 +150,6 @@ $status = Payaza::payouts()->send($beneficiary, 'PAYOUT-456');
 
 // Check payout status
 $payoutStatus = Payaza::payouts()->status('PAYOUT-456');
-
-// Get list of supported banks
-$banks = Payaza::payouts()->getBanks('NG'); // Nigeria banks
 ```
 
 #### GHS Bank Transfer
@@ -247,11 +244,6 @@ foreach ($allBalances as $account) {
     echo "Currency: {$account['currency']}, Balance: {$account['balance']}";
 }
 
-// Get transaction history
-$transactions = Payaza::accounts()->transactions(page: 1, limit: 20);
-
-// Get specific transaction
-$transaction = Payaza::accounts()->transaction('TXN-789');
 
 // Verify account name before payout (Account Name Enquiry)
 $accountInfo = Payaza::accounts()->getAccountNameEnquiry(
@@ -260,8 +252,16 @@ $accountInfo = Payaza::accounts()->getAccountNameEnquiry(
     currency: Currency::NGN
 );
 
-echo "Account Name: {$accountInfo['account_name']}";
-echo "Account Status: {$accountInfo['account_status']}";
+// Check if account is valid before proceeding
+if ($accountInfo['account_status'] === 'INVALID') {
+    echo "Invalid account number: {$accountInfo['error_message']}";
+} elseif ($accountInfo['account_status'] === 'ACTIVE') {
+    echo "Account Name: {$accountInfo['account_name']}";
+    echo "Account Status: {$accountInfo['account_status']}";
+    // Proceed with payout...
+} else {
+    echo "Account Status: {$accountInfo['account_status']}";
+}
 
 // Get Payaza account information
 $payazaAccounts = Payaza::accounts()->getPayazaAccountsInfo();

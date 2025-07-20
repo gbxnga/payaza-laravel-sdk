@@ -14,7 +14,6 @@ interface PayoutsContract
 
     public function status(string $transactionRef): TransactionStatus;
 
-    public function getBanks(string $countryCode): array;
     
     public function sendMobileMoney(
         Currency $currency,

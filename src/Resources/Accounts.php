@@ -70,12 +70,28 @@ final class Accounts implements AccountsContract
             throw new PayazaException('Connection timeout - account name enquiry service not responding');
         }
 
-        if (!$response->successful() || !isset($response->json()['response_code']) || $response->json()['response_code'] != 200) {
-            $message = $response->json('response_message', $response->json('message', 'Failed to get account name'));
-            throw new PayazaException($message, $response->status(), null, $response->json());
+        $responseData = $response->json();
+        $responseCode = $responseData['response_code'] ?? null;
+        $responseMessage = $responseData['response_message'] ?? 'Unknown error';
+        
+        // Handle invalid account gracefully - return as inactive rather than throwing exception
+        if ($responseCode == 500 && str_contains(strtolower($responseMessage), 'invalid account')) {
+            return [
+                'account_number' => $accountNumber,
+                'bank_code' => $bankCode,
+                'account_name' => null,
+                'account_status' => 'INVALID',
+                'transaction_reference' => null,
+                'error_message' => $responseMessage
+            ];
+        }
+        
+        // Only throw exception for unexpected errors (not invalid accounts)
+        if (!$response->successful() || $responseCode != 200) {
+            throw new PayazaException($responseMessage, $response->status(), null, $responseData);
         }
 
-        $responseContent = $response->json('response_content', []);
+        $responseContent = $responseData['response_content'] ?? [];
 
         return [
             'account_number' => $responseContent['account_number'] ?? $accountNumber,

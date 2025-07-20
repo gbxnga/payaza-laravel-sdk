@@ -92,18 +92,6 @@ final class Payouts implements PayoutsContract
         );
     }
 
-    public function getBanks(string $countryCode): array
-    {
-        $response = $this->http->get(
-            $this->baseUrl() . "/payout/banks/{$countryCode}"
-        );
-
-        if (! $response->successful()) {
-            throw new PayazaException('Unable to fetch banks', $response->status(), null, $response->json());
-        }
-
-        return $response->json('data', []);
-    }
 
     private function baseUrl(): string
     {

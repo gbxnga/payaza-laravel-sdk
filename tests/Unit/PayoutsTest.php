@@ -80,23 +80,6 @@ test('fetches payout status', function () {
         ->and($status->transactionId)->toBe('PAYOUT123');
 });
 
-test('fetches banks list', function () {
-    Http::fake([
-        'https://api.payaza.africa/payout/banks/NG' => Http::response([
-            'data' => [
-                ['code' => '044', 'name' => 'Access Bank'],
-                ['code' => '011', 'name' => 'First Bank'],
-            ],
-        ], 200),
-    ]);
-
-    $banks = Payaza::payouts()->getBanks('NG');
-
-    expect($banks)
-        ->toBeArray()
-        ->toHaveCount(2)
-        ->and($banks[0]['code'])->toBe('044');
-});
 
 test('sends GHS bank transfer successfully', function () {
     // Mock account info for GHS
