@@ -22,7 +22,7 @@ A production-ready Laravel PHP SDK that wraps the entire Payaza REST API behind 
 You can install the package via composer:
 
 ```bash
-composer require your-vendor/payaza-sdk
+composer require gbxnga/payaza-laravel-sdk
 ```
 
 Publish the configuration file:
@@ -38,11 +38,27 @@ Add your Payaza credentials to your `.env` file:
 ```env
 PAYAZA_PUBLIC_KEY=your_base64_encoded_public_key
 PAYAZA_PREMIUM_PUBLIC_KEY=your_premium_public_key
+PAYAZA_DEFAULT_ACCOUNT=primary # Default account to use
 PAYAZA_ENV=test # or 'live' for production
 PAYAZA_BASE_URL=https://api.payaza.africa
 ```
 
 ## Usage
+
+### Multiple Account Support
+
+The SDK supports multiple Payaza accounts with easy switching:
+
+```php
+use PayazaSdk\Payaza;
+
+// Use default account (configured in PAYAZA_DEFAULT_ACCOUNT)
+$balance = Payaza::accounts()->balance();
+
+// Switch to a specific account
+$premiumBalance = Payaza::account('premium')->accounts()->balance();
+$primaryCharge = Payaza::account('primary')->cards()->charge($amount, $card, $ref);
+```
 
 ### Card Charges
 
@@ -219,6 +235,8 @@ try {
 
 ### Running Unit Tests
 
+This SDK uses [PestPHP](https://pestphp.com) for testing:
+
 ```bash
 composer test
 ```
@@ -284,9 +302,18 @@ The `config/payaza.php` file contains:
 
 ```php
 return [
-    // API Keys (base64-encoded from dashboard)
-    'primary_public_key'  => env('PAYAZA_PUBLIC_KEY'),
-    'premium_public_key'  => env('PAYAZA_PREMIUM_PUBLIC_KEY'),
+    // Multiple Accounts Configuration
+    'accounts' => [
+        'primary' => [
+            'key' => env('PAYAZA_PUBLIC_KEY'),
+        ],
+        'premium' => [
+            'key' => env('PAYAZA_PREMIUM_PUBLIC_KEY'),
+        ],
+    ],
+    
+    // Default Account
+    'default_account' => env('PAYAZA_DEFAULT_ACCOUNT', 'primary'),
 
     // Environment and URLs
     'environment' => env('PAYAZA_ENV', 'test'), // 'test' or 'live'

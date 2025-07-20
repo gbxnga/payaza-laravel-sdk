@@ -14,7 +14,10 @@ final class PayazaServiceProvider extends ServiceProvider
         $this->mergeConfigFrom(__DIR__.'/../config/payaza.php', 'payaza');
 
         $this->app->singleton(PayazaClient::class, function () {
-            $key = config('payaza.primary_public_key');
+            $defaultAccount = config('payaza.default_account', 'primary');
+            $accounts = config('payaza.accounts');
+            $key = $accounts[$defaultAccount]['key'];
+            
             $env = config('payaza.environment') === 'live'
                 ? Environment::LIVE : Environment::TEST;
 

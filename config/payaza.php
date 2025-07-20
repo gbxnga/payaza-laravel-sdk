@@ -5,11 +5,24 @@ declare(strict_types=1);
 return [
     /*
     |--------------------------------------------------------------------------
-    | API Keys (base64‑encoded in Payaza dashboard)
+    | Multiple Accounts Configuration
     |--------------------------------------------------------------------------
     */
-    'primary_public_key'  => env('PAYAZA_PUBLIC_KEY'),
-    'premium_public_key'  => env('PAYAZA_PREMIUM_PUBLIC_KEY'),
+    'accounts' => [
+        'primary' => [
+            'key' => env('PAYAZA_PUBLIC_KEY'),
+        ],
+        'premium' => [
+            'key' => env('PAYAZA_PREMIUM_PUBLIC_KEY'),
+        ],
+    ],
+    
+    /*
+    |--------------------------------------------------------------------------
+    | Default Account
+    |--------------------------------------------------------------------------
+    */
+    'default_account' => env('PAYAZA_DEFAULT_ACCOUNT', 'primary'),
 
     /*
     |--------------------------------------------------------------------------
