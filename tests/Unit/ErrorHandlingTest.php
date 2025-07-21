@@ -138,8 +138,10 @@ test('handles card refund failure with debug message', function () {
 });
 
 test('handles network timeout gracefully', function () {
-    // Simulate network timeout by not providing any HTTP fake
-    // This would cause a connection timeout in real scenarios
+    // Simulate connection timeout exception
+    Http::fake(function ($request) {
+        throw new \Illuminate\Http\Client\ConnectionException('Connection timeout');
+    });
     
     $card = new Card('4242424242424242', 12, 2027, '123');
 
@@ -150,7 +152,7 @@ test('handles network timeout gracefully', function () {
         card: $card,
         transactionRef: 'NETWORK-TIMEOUT-123',
         currency: Currency::USD
-    ))->toThrow(PayazaException::class);
+    ))->toThrow(PayazaException::class, 'Connection timeout - card issuer not responding');
 });
 
 test('handles invalid currency filter', function () {

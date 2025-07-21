@@ -69,12 +69,34 @@ final class Cards implements CardsContract
             throw new PayazaException('Connection timeout - card issuer not responding');
         }
 
-        if (!$response->successful()) {
-            $message = $response->json('message', $response->json('debugMessage', 'Charge failed'));
-            throw new PayazaException($message, $response->status(), null, $response->json());
-        }
-
         $responseData = $response->json();
+        
+        // Handle different types of failures appropriately
+        if (!$response->successful()) {
+            $message = $responseData['message'] ?? $responseData['debugMessage'] ?? 'Charge failed';
+            $debugMessage = $responseData['debugMessage'] ?? '';
+            
+            // API/Authentication errors should throw exceptions (invalid credentials, unauthorized, etc.)
+            if (str_contains(strtolower($debugMessage), 'invalid credentials') ||
+                str_contains(strtolower($debugMessage), 'unauthorized') ||
+                str_contains(strtolower($debugMessage), 'authentication') ||
+                $response->status() == 401 ||
+                $response->status() >= 500) {
+                throw new PayazaException($message, $response->status(), null, $responseData);
+            }
+            
+            // Transaction failures (insufficient funds, card declined, etc.) return FAILED status
+            if ($response->status() == 400 && isset($responseData['statusOk']) && $responseData['statusOk'] === false) {
+                return new TransactionStatus(
+                    transactionId: $transactionRef,
+                    state: TransactionState::FAILED,
+                    raw: $responseData
+                );
+            }
+            
+            // Other errors still throw exceptions
+            throw new PayazaException($message, $response->status(), null, $responseData);
+        }
         
         // Handle 2DS vs 3DS response format
         if ($authType === '2DS') {
